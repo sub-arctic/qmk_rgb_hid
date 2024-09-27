@@ -1,0 +1,56 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build with CMake
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake libhidapi-hidraw0 libhidapi-dev
+
+      - name: Configure and build with CMake
+        run: |
+          mkdir -p build
+          cd build
+          cmake ..
+          make
+      
+      - name: Check if this is a Release and upload artifact
+        if: contains(github.event.head_commit.message, '[release]')
+        run: |
+          # Compress and package the binary artifact
+          cd build
+          tar -czf send_rgb.tar.gz send_rgb
+        
+      - name: Upload Build Artifact
+        if: contains(github.event.head_commit.message, '[release]')
+        uses: actions/upload-artifact@v3
+        with:
+          name: send_rgb_binary
+          path: build/send_rgb.tar.gz
+
+  release:
+    name: Create GitHub Release (Only for [release] Commits)
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Create GitHub Release
+        if: contains(github.event.head_commit.message, '[release]')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/send_rgb.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
