@@ -23,21 +23,13 @@ jobs:
           cd build
           cmake ..
           make
-      
-      - name: Check if this is a Release and upload artifact
-        if: contains(github.event.head_commit.message, '[release]')
-        run: |
-          # Compress and package the binary artifact
-          cd build
-          tar -czf send_rgb.tar.gz send_rgb
-        
-      - name: Upload Build Artifact
-        if: contains(github.event.head_commit.message, '[release]')
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: send_rgb_binary
-          path: build/send_rgb.tar.gz
-
+          path: build/send_rgb
+  
   release:
     name: Create GitHub Release (Only for [release] Commits)
     runs-on: ubuntu-latest
@@ -51,6 +43,6 @@ jobs:
         if: contains(github.event.head_commit.message, '[release]')
         uses: softprops/action-gh-release@v1
         with:
-          files: build/send_rgb.tar.gz
+          files: build/send_rgb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
